@@ -1,0 +1,31 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+' uncomment the following line and comment the first to use locally
+' !include C4_Context.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Контекстная диаграмма C4 для платформы трейдинга
+
+Person(client_trader, "Трейдер", "")
+Person(client_broker, "Брокер", "")
+Person(client_admin, "Администратор", "")
+Person(client_analyst, "Аналитик", "")
+
+System(trading_platform, "Платформа для трейдинга", "")
+
+System_Ext(mail_system, "E-mail система", "")
+System_Ext(payment_system, "Платёжная система", "")
+System_Ext(proxy_system, "Обратный прокси-сервер", "")
+System_Ext(sms_system, "SMS-платформа", "")
+
+Rel(client_trader, trading_platform, "Использует")
+Rel(client_broker, trading_platform, "Использует")
+Rel(client_admin, trading_platform, "Использует")
+Rel(client_analyst, trading_platform, "Использует")
+Rel(proxy_system, trading_platform, "Перехватить запрос")
+Rel(proxy_system, trading_platform, "Отправить запрос")
+Rel(trading_platform, sms_system, "Отправить запрос на отправку SMS-сообщения")
+Rel(trading_platform, payment_system, "Отправить запрос на пополнение/вывод средств")
+Rel(trading_platform, mail_system, "Отправить запрос на отправку email-письма")
+@enduml
