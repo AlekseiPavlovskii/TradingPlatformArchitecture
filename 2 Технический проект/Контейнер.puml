@@ -1,0 +1,92 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+!define DEVICONS https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/devicons
+!include DEVICONS/postgresql.puml
+!include DEVICONS/react.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Контекстная диаграмма C4 для платформы трейдинга
+
+Person(client_trader, "Трейдер", "")
+Person(client_broker, "Брокер", "")
+Person(client_admin, "Администратор", "")
+Person(client_analyst, "Аналитик", "")
+
+System_Boundary(trading_platform, "Платформа для трейдинга") {
+  Container_Boundary(trading_backend_container, "Backend") {
+    Component(trading_backend_account_controller, "Account Controller")
+    Component(trading_backend_account_service, "Account Service")
+
+    Component(trading_backend_payment_integration_controller, "Payment Integration Controller")
+    Component(trading_backend_payment_integration_service, "Payment Integration Service")
+
+    Component(trading_backend_forum_controller, "Forum Controller")
+    Component(trading_backend_forum_service, "Forum Service")
+
+    Component(trading_backend_trading_controller, "Trading Controller")
+    Component(trading_backend_trading_service, "Trading Service")
+
+    Component(trading_backend_analytics_controller, "Analytics Controller")
+    Component(trading_backend_analytics_service, "Analytics Service")
+
+    Component(trading_backend_statistics_controller, "Statistics Controller")
+    Component(trading_backend_statistics_service, "Statistics Service")
+
+    Component(trading_backend_trading_settings_controller, "Trading Settings Controller")
+    Component(trading_backend_trading_settings_service, "Trading Settings Service")
+  }
+
+  Container(trading_frontend_container, "Frontend", "React & Redux", "", $sprite="react")
+  ContainerDb(db_container, "База данных", "PostgreSQL", "", $sprite="postgresql")
+  ContainerDb(db_finance_container, "Финансовая База данных", "PostgreSQL", "", $sprite="postgresql")
+  ContainerDb(db_analytics_container, "Аналитическая база данных", "ClickHouse", "")
+}
+
+System_Ext(mail_system, "E-mail система", "")
+System_Ext(payment_system, "Платёжная система", "")
+System_Ext(proxy_system, "Обратный прокси-сервер", "")
+System_Ext(sms_system, "SMS-платформа", "")
+
+BiRel(client_trader, proxy_system, "Использует")
+BiRel(client_broker, proxy_system, "Использует")
+BiRel(client_admin, proxy_system, "Использует")
+BiRel(client_analyst, proxy_system, "Использует")
+
+BiRel(trading_frontend_container, trading_backend_account_controller, "Отправить запрос")
+BiRel(trading_frontend_container, trading_backend_payment_integration_controller, "Отправить запрос")
+BiRel(trading_frontend_container, trading_backend_forum_controller, "Отправить запрос")
+BiRel(trading_frontend_container, trading_backend_trading_controller, "Отправить запрос")
+BiRel(trading_frontend_container, trading_backend_analytics_controller, "Отправить запрос")
+BiRel(trading_frontend_container, trading_backend_statistics_controller, "Отправить запрос")
+BiRel(trading_frontend_container, trading_backend_trading_settings_controller, "Отправить запрос")
+
+BiRel(proxy_system, trading_frontend_container, "Отправить запрос")
+
+Rel(trading_backend_account_service, sms_system, "Отправить запрос на отправку SMS-сообщения")
+
+Rel(trading_backend_payment_integration_service, payment_system, "Отправить запрос на пополнение/вывод средств")
+
+Rel(trading_backend_account_service, mail_system, "Отправить запрос на отправку email-письма")
+
+BiRel(trading_backend_account_controller, trading_backend_account_service, "Обратиться")
+BiRel(trading_backend_payment_integration_controller, trading_backend_payment_integration_service, "Обратиться")
+BiRel(trading_backend_payment_integration_controller, trading_backend_account_service, "Обратиться")
+BiRel(trading_backend_forum_controller, trading_backend_forum_service, "Обратиться")
+BiRel(trading_backend_trading_controller, trading_backend_trading_service, "Обратиться")
+BiRel(trading_backend_analytics_controller, trading_backend_analytics_service, "Обратиться")
+BiRel(trading_backend_statistics_controller, trading_backend_statistics_service, "Обратиться")
+BiRel(trading_backend_trading_settings_controller, trading_backend_trading_settings_service, "Обратиться")
+
+BiRel(trading_backend_account_service, db_container, "Обратиться")
+BiRel(trading_backend_forum_service, db_container, "Обратиться")
+BiRel(trading_backend_statistics_service, db_container, "Обратиться")
+BiRel(trading_backend_payment_integration_service, db_container, "Обратиться")
+BiRel(trading_backend_trading_settings_service, db_container, "Обратиться")
+
+BiRel(trading_backend_analytics_service, db_finance_container, "Обратиться")
+BiRel(trading_backend_statistics_service, db_finance_container, "Обратиться")
+BiRel(trading_backend_trading_service, db_finance_container, "Обратиться")
+
+BiRel(trading_backend_analytics_service, db_analytics_container, "Обратиться")
+@enduml
