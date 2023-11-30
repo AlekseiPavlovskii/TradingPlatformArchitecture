@@ -10,83 +10,70 @@ title Контекстная диаграмма C4 для платформы т�
 
 Person(client_trader, "Трейдер", "")
 Person(client_broker, "Брокер", "")
-Person(client_admin, "Администратор", "")
-Person(client_analyst, "Аналитик", "")
+Person(client_admin, "Администратор", "сис. админ")
+Person(client_analyst, "Аналитик", "Штатный аналитик продукта")
 
-System_Boundary(trading_platform, "Платформа для трейдинга") {
-  Container_Boundary(trading_backend_container, "Backend") {
-    Component(trading_backend_account_controller, "Account Controller")
-    Component(trading_backend_account_service, "Account Service")
+System(trading_frontend_system, "Frontend", "React & Redux\n Предоставляет UI для работы с приложением", $sprite="react")
 
-    Component(trading_backend_payment_integration_controller, "Payment Integration Controller")
-    Component(trading_backend_payment_integration_service, "Payment Integration Service")
+System_Boundary(trading_backend_system, "Backend") {
+  Container(api_gateway_container, "API Gateway", "C#, ASP.NET", "Распределяет запросы по нужным микросервисам")
 
-    Component(trading_backend_forum_controller, "Forum Controller")
-    Component(trading_backend_forum_service, "Forum Service")
+  Container(payment_integration_microservice_container, "Payment Integration Microservice", "C#, ASP.NET", "Взаимодействие с платёжными системами")
+  Container(transactions_microservice_container, "Transactions Microservice", "C#, ASP.NET", "Бизнес-логика транзакций")
+  Container(analytics_microservice_container, "Analytics Microservice", "C#, ASP.NET", "Аналитические отчёты")
+  Container(forum_microservice_container, "Forum Microservice", "C#, ASP.NET", "Сообщения, топики, статьи")
+  Container(user_microservice_container, "User Microservice", "C#, ASP.NET", "Личный профиль пользователя")
 
-    Component(trading_backend_trading_controller, "Trading Controller")
-    Component(trading_backend_trading_service, "Trading Service")
+  ContainerDb(payment_integration_container_db, "Payment Integration DB", "PostgreSQL", "", $sprite="postgresql", "Проводящиеся и проведённые запросы к платёжными системам")
+  ContainerDb(transactions_container_db, "Transactions DB", "PostgreSQL", "", $sprite="postgresql", "Проводящиеся и проведённые транзакции")
+  ContainerDb(analytics_container_db, "Analytics DB", "ClickHouse", "Все аналитические данные")
+  ContainerDb(forum_container_db, "Forum DB", "PostgreSQL", "", $sprite="postgresql", "Сообщения, топики, статьи")
+  ContainerDb(user_container_db, "User DB", "PostgreSQL", "", $sprite="postgresql", "Личная информация о пользователях")
 
-    Component(trading_backend_analytics_controller, "Analytics Controller")
-    Component(trading_backend_analytics_service, "Analytics Service")
-
-    Component(trading_backend_statistics_controller, "Statistics Controller")
-    Component(trading_backend_statistics_service, "Statistics Service")
-
-    Component(trading_backend_trading_settings_controller, "Trading Settings Controller")
-    Component(trading_backend_trading_settings_service, "Trading Settings Service")
-  }
-
-  Container(trading_frontend_container, "Frontend", "React & Redux", "", $sprite="react")
-  ContainerDb(db_container, "База данных", "PostgreSQL", "", $sprite="postgresql")
-  ContainerDb(db_finance_container, "Финансовая База данных", "PostgreSQL", "", $sprite="postgresql")
-  ContainerDb(db_analytics_container, "Аналитическая база данных", "ClickHouse", "")
+  ContainerQueue(analytics_container_mq, "Analytics MQ", "RabbitMQ")
+  ContainerQueue(payment_integration_container_mq, "Payment Integration MQ", "RabbitMQ")
+  ContainerQueue(transactions_container_mq, "Transactions MQ", "RabbitMQ")
+  ContainerQueue(user_container_mq, "User MQ", "RabbitMQ")
 }
 
-System_Ext(mail_system, "E-mail система", "")
-System_Ext(payment_system, "Платёжная система", "")
-System_Ext(proxy_system, "Обратный прокси-сервер", "")
-System_Ext(sms_system, "SMS-платформа", "")
+System_Ext(mail_system, "E-mail система", "Отправка email-писем")
+System_Ext(payment_system, "Платёжная система")
+System_Ext(proxy_system, "Обратный прокси-сервер", "Защита от DDOS-атак")
+System_Ext(sms_system, "SMS-платформа", "Отправка SMS-писем")
 
-BiRel(client_trader, proxy_system, "Использует")
-BiRel(client_broker, proxy_system, "Использует")
-BiRel(client_admin, proxy_system, "Использует")
-BiRel(client_analyst, proxy_system, "Использует")
+client_trader --> proxy_system : "Использовать"
+client_broker --> proxy_system : "Использовать"
+client_admin --> proxy_system : "Использовать"
+client_analyst --> proxy_system : "Использовать"
 
-BiRel(trading_frontend_container, trading_backend_account_controller, "Отправить запрос")
-BiRel(trading_frontend_container, trading_backend_payment_integration_controller, "Отправить запрос")
-BiRel(trading_frontend_container, trading_backend_forum_controller, "Отправить запрос")
-BiRel(trading_frontend_container, trading_backend_trading_controller, "Отправить запрос")
-BiRel(trading_frontend_container, trading_backend_analytics_controller, "Отправить запрос")
-BiRel(trading_frontend_container, trading_backend_statistics_controller, "Отправить запрос")
-BiRel(trading_frontend_container, trading_backend_trading_settings_controller, "Отправить запрос")
+proxy_system --> trading_frontend_system : "HTTP-запрос"
 
-BiRel(proxy_system, trading_frontend_container, "Отправить запрос")
+trading_frontend_system --> api_gateway_container : "HTTP-запрос"
 
-Rel(trading_backend_account_service, sms_system, "Отправить запрос на отправку SMS-сообщения")
+api_gateway_container --> transactions_microservice_container : "HTTP-запрос"
+api_gateway_container --> analytics_microservice_container : "HTTP-запрос"
+api_gateway_container --> forum_microservice_container : "HTTP-запрос"
+api_gateway_container --> user_microservice_container : "HTTP-запрос"
 
-Rel(trading_backend_payment_integration_service, payment_system, "Отправить запрос на пополнение/вывод средств")
+payment_integration_microservice_container --> payment_integration_container_db : "Передать запрос"
+transactions_microservice_container --> transactions_container_db : "Передать запрос"
+transactions_microservice_container --> payment_integration_microservice_container : "Передать запрос"
+analytics_microservice_container --> analytics_container_db : "Передать запрос"
+forum_microservice_container --> forum_container_db : "Передать запрос"
+user_microservice_container --> user_container_db : "Передать запрос"
+transactions_microservice_container --> payment_integration_microservice_container : "Передать запрос"
+user_microservice_container --> transactions_microservice_container : "Передать запрос"
 
-Rel(trading_backend_account_service, mail_system, "Отправить запрос на отправку email-письма")
+transactions_microservice_container --> analytics_container_mq : "Отправить событие"
+analytics_microservice_container --> analytics_container_mq : "Отправить событие"
+forum_microservice_container --> analytics_container_mq : "Отправить событие"
+user_microservice_container --> payment_integration_container_mq : "Отправить событие"
+payment_integration_microservice_container --> user_container_mq : "Отправить событие"
+transactions_microservice_container --> payment_integration_container_mq : "Отправить событие"
+transactions_microservice_container --> transactions_container_mq : "Отправить событие"
+payment_integration_microservice_container --> transactions_container_mq : "Отправить событие"
 
-BiRel(trading_backend_account_controller, trading_backend_account_service, "Обратиться")
-BiRel(trading_backend_payment_integration_controller, trading_backend_payment_integration_service, "Обратиться")
-BiRel(trading_backend_payment_integration_controller, trading_backend_account_service, "Обратиться")
-BiRel(trading_backend_forum_controller, trading_backend_forum_service, "Обратиться")
-BiRel(trading_backend_trading_controller, trading_backend_trading_service, "Обратиться")
-BiRel(trading_backend_analytics_controller, trading_backend_analytics_service, "Обратиться")
-BiRel(trading_backend_statistics_controller, trading_backend_statistics_service, "Обратиться")
-BiRel(trading_backend_trading_settings_controller, trading_backend_trading_settings_service, "Обратиться")
-
-BiRel(trading_backend_account_service, db_container, "Обратиться")
-BiRel(trading_backend_forum_service, db_container, "Обратиться")
-BiRel(trading_backend_statistics_service, db_container, "Обратиться")
-BiRel(trading_backend_payment_integration_service, db_container, "Обратиться")
-BiRel(trading_backend_trading_settings_service, db_container, "Обратиться")
-
-BiRel(trading_backend_analytics_service, db_finance_container, "Обратиться")
-BiRel(trading_backend_statistics_service, db_finance_container, "Обратиться")
-BiRel(trading_backend_trading_service, db_finance_container, "Обратиться")
-
-BiRel(trading_backend_analytics_service, db_analytics_container, "Обратиться")
+payment_integration_microservice_container --> payment_system : "Отправить запрос"
+user_microservice_container --> mail_system : "Отправить Email"
+user_microservice_container --> sms_system : "Отправить SMS"
 @enduml

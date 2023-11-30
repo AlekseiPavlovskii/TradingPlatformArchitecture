@@ -1,0 +1,268 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+!define DEVICONS https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/devicons
+!include DEVICONS/postgresql.puml
+!include DEVICONS/react.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Контекстная диаграмма C4 для платформы трейдинга
+
+Person(client_trader, "Трейдер", "")
+Person(client_broker, "Брокер", "")
+Person(client_admin, "Администратор", "сис. админ")
+Person(client_analyst, "Аналитик", "Штатный аналитик продукта")
+
+System(trading_frontend_system, "Frontend", "React & Redux\n Предоставляет UI для работы с приложением", $sprite="react")
+
+System_Boundary(trading_backend_system, "Backend") {
+  Container(api_gateway_container, "API Gateway", "C#, ASP.NET", "Распределяет запросы по нужным микросервисам")
+
+  Container_Boundary(payment_integration_microservice_container, "Payment Integration Microservice") {
+    Container_Boundary(payment_integration_microservice_api_container, "API") {
+      Component(payment_integration_event_controller_component, "Payment Integration Event Controller", C#, ASP.NET")
+      Component(payment_method_controller_component, "Payment Method Controller", "C#, ASP.NET")
+      Component(payment_integration_microservice_transaction_controller_component, "Transaction Controller",  "C#, ASP.NET") 
+    }
+
+    Container_Boundary(payment_integration_microservice_infrastructure_container, "Infrastructure") {
+      Component(payment_integration_mq_provider_component, "Payment Integration MQ Provider", "C#, ASP.NET")
+      Component(payment_integration_db_provider_component, "Payment Integration DB Provider", "C#, ASP.NET")
+    }
+
+    Container_Boundary(payment_integration_microservice_application_container, "Application") {
+      Component(payment_integration_microservice_payment_method_added_event_handler_component, "Payment Method Added Event Handler", "C#, ASP.NET")
+      Component(transactions_created_event_handler_component, "Transactions Created Event Handler", "C#, ASP.NET")
+      Component(payment_method_service_component, "Payment Method Service", "C#, ASP.NET")
+      Component(payment_integration_microservice_transaction_service_component, "Transaction Service", "C#, ASP.NET")
+    }
+
+    Container_Boundary(payment_integration_microservice_domain_container, "Domain") {
+      Component(payment_method_binding_component, "Payment Method Binding", "C#, ASP.NET")
+      Component(payment_integration_microservice_transaction_component, "Transaction", "C#, ASP.NET")
+    }
+
+    'Связи внутри контейнера
+    payment_integration_event_controller_component --> payment_integration_mq_provider_component
+    payment_integration_event_controller_component --> payment_integration_microservice_payment_method_added_event_handler_component
+    payment_integration_event_controller_component --> transactions_created_event_handler_component
+    payment_method_controller_component --> payment_method_service_component
+    payment_integration_microservice_transaction_controller_component --> payment_integration_microservice_transaction_service_component
+    
+    payment_integration_microservice_payment_method_added_event_handler_component --> payment_method_service_component
+    payment_integration_microservice_payment_method_added_event_handler_component --> payment_method_binding_component
+    transactions_created_event_handler_component --> payment_integration_microservice_transaction_component
+    transactions_created_event_handler_component --> payment_integration_microservice_transaction_service_component
+    payment_method_service_component --> payment_method_binding_component
+    payment_method_service_component --> payment_integration_db_provider_component
+    payment_integration_microservice_transaction_service_component --> payment_integration_db_provider_component
+  }
+
+  Container_Boundary(transactions_microservice_container, "Transactions Microservice") {
+    Container_Boundary(transaction_microservice_api_container, "API") {
+      Component(transaction_event_consumer_component, "Transaction Event Consumer", "C# ASP.NET")
+      Component(transaction_microservice_transaction_controller_component, "Transaction Controller", "C# ASP.NET")
+    }
+
+    Container_Boundary(transaction_microservice_infrastructure_container, "Infrastructure") {
+      Component(transaction_mq_provider_component, "Transaction MQ Provider", "C# ASP.NET")
+      Component(transaction_db_provider_component, "Transaction DB Provider", "C# ASP.NET")
+    }
+
+    Container_Boundary(transaction_microservice_application_container, "Application") {
+      Component(transaction_microservice_transaction_service_component, "Transaction Service", "C# ASP.NET")
+      Component(transaction_created_event_handler_component, "Transaction Created Event Handler", "C# ASP.NET")
+      Component(transactions_microservice_transaction_finished_event_handler_component, "Transaction Finished Event Handler", "C# ASP.NET")
+    }
+
+    Container_Boundary(transaction_microservice_domain_container, "Domain") {
+      Component(transaction_microservice_transaction_component, "Transaction", "C# ASP.NET")
+    }
+
+    'Связи внутри контейнера
+    transaction_event_consumer_component --> transaction_mq_provider_component
+    transaction_event_consumer_component --> transaction_created_event_handler_component
+    transaction_event_consumer_component --> transactions_microservice_transaction_finished_event_handler_component
+    transaction_microservice_transaction_controller_component --> transaction_microservice_transaction_service_component
+
+    transaction_microservice_transaction_service_component --> transaction_db_provider_component
+    transaction_microservice_transaction_service_component --> transaction_created_event_handler_component
+    transaction_microservice_transaction_service_component --> transaction_microservice_transaction_component
+    transaction_created_event_handler_component --> transaction_microservice_transaction_component
+    transactions_microservice_transaction_finished_event_handler_component --> transaction_db_provider_component
+    transactions_microservice_transaction_finished_event_handler_component --> transaction_microservice_transaction_component
+  }
+  Container_Boundary(analytics_microservice_container, "Analytics Microservice") {
+    Container_Boundary(analytics_microservice_api_container, "API") {
+      Component(analytics_event_consumer_controller_component, "Analytics Event Consumer", "C# ASP.NET")
+      Component(analytics_controller_component, "Analytics Controller", "C# ASP.NET")
+    }
+
+    Container_Boundary(analytics_microservice_infrastructure_container, "Infrastructure") {
+      Component(analytics_mq_provider_component, "Analytics MQ Provider", "C# ASP.NET")
+      Component(analytics_db_provider_component, "Analytics DB Provider", "C# ASP.NET")
+    }
+
+    Container_Boundary(analytics_microservice_application_container, "Application") {
+      Component(forum_event_handler_component, "Forum Event Handler", "C# ASP.NET")
+      Component(transaction_completed_event_handler_component, "Transaction Completed Event Handler", "C# ASP.NET")
+      Component(user_changed_event_handler_component, "User Changed Event Handler", "C# ASP.NET")
+      Component(analytics_service_component, "Analytics Service", "C# ASP.NET")
+    }
+
+    Container_Boundary(analytics_microservice_domain_container, "Domain") {
+      Component(forum_change_component, "Forum Change", "C# ASP.NET")
+      Component(user_change_component, "User Change", "C# ASP.NET")
+      Component(financial_instrument_change_component, "Financial Instrument Change", "C# ASP.NET")
+    }
+
+    'Связи внутри контейнера
+    analytics_event_consumer_controller_component --> analytics_mq_provider_component
+    analytics_event_consumer_controller_component --> forum_event_handler_component
+    analytics_event_consumer_controller_component --> transaction_completed_event_handler_component
+    analytics_event_consumer_controller_component --> user_changed_event_handler_component
+    analytics_controller_component --> analytics_service_component
+
+    forum_event_handler_component --> analytics_db_provider_component
+    forum_event_handler_component --> forum_change_component
+    transaction_completed_event_handler_component --> analytics_db_provider_component
+    transaction_completed_event_handler_component --> financial_instrument_change_component
+    user_changed_event_handler_component --> analytics_db_provider_component
+    user_changed_event_handler_component --> user_change_component
+    analytics_service_component --> analytics_db_provider_component
+    analytics_service_component --> forum_change_component
+    analytics_service_component --> user_change_component
+    analytics_service_component --> financial_instrument_change_component
+  }
+  Container(forum_microservice_container, "Forum Microservice", "C#, ASP.NET", "Сообщения, топики, статьи") {
+    Container_Boundary(forum_microservice_api_container, "API") {
+      Component(message_controller_component, "Message Controller", "C# ASP.NET")
+      Component(topic_controller_component, "Topic Controller", "C# ASP.NET")
+    }
+
+    Container_Boundary(forum_microservice_infrastructure_container, "Infrastructure") {
+      Component(forum_db_provider_component, "Forum DB Provider", "C# ASP.NET")
+    }
+
+    Container_Boundary(forum_microservice_application_container, "Application") {
+      Component(message_service_component, "Message Service", "C# ASP.NET")
+      Component(topic_service_component, "Topic Service", "C# ASP.NET")
+    }
+
+    Container_Boundary(forum_microservice_domain_container, "Domain") {
+      Component(forum_microservice_user_component, "User", "C# ASP.NET")
+      Component(message_component, "Message", "C# ASP.NET")
+      Component(topic_component, "Topic", "C# ASP.NET")
+    }
+
+    'Связи внутри контейнера
+    message_controller_component --> message_service_component
+    topic_controller_component --> topic_service_component
+
+    message_service_component --> forum_db_provider_component
+    message_service_component --> forum_microservice_user_component
+    message_service_component --> message_component
+    message_service_component --> topic_component
+    topic_service_component --> forum_db_provider_component
+    topic_service_component --> forum_microservice_user_component
+    topic_service_component --> message_component
+    topic_service_component --> topic_component
+  }
+  Container(user_microservice_container, "User Microservice", "C#, ASP.NET", "Личный профиль пользователя") {
+    Container_Boundary(user_microservice_api_container, "API") {
+      Component(trading_settings_controller_component, "Trading Settings Controller", "C# ASP.NET")
+      Component(auth_controller_component, "Auth Controller", "C# ASP.NET")
+      Component(user_controller_component, "User Controller", "C# ASP.NET")
+      Component(user_event_consumer_component, "User Event Consumer", "C# ASP.NET")
+    }
+
+    Container_Boundary(user_microservice_infrastructure_container, "Infrastructure") {
+      Component(user_mq_provider_component, "User MQ Provider", "C# ASP.NET")
+      Component(user_db_provider_component, "User DB Provider", "C# ASP.NET")
+    }
+
+    Container_Boundary(user_microservice_application_container, "Application") {
+      Component(user_microservice_payment_method_added_event_handler_component, "Payment Method Added Event Handler", "C# ASP.NET")
+      Component(user_microservice_transaction_finished_event_handler_component, "Transaction Finished Event Handler", "C# ASP.NET")
+      Component(auth_service_component, "Auth Service", "C# ASP.NET")
+      Component(user_service_component, "User Service", "C# ASP.NET")
+      Component(trading_settings_service_component, "Tradins Settings Service", "C# ASP.NET")
+    }
+
+    Container_Boundary(user_microservice_domain_container, "Domain") {
+      Component(trading_settings_component, "Trading Settings", "C# ASP.NET")
+      Component(user_microservice_user_component, "User", "C# ASP.NET")
+    }
+
+    'Связи внутри контейнера
+    trading_settings_controller_component --> trading_settings_service_component
+    auth_controller_component --> auth_service_component
+    user_controller_component --> user_service_component
+    user_event_consumer_component --> user_mq_provider_component
+
+    user_microservice_payment_method_added_event_handler_component --> user_event_consumer_component
+    user_microservice_payment_method_added_event_handler_component --> user_service_component
+    user_microservice_payment_method_added_event_handler_component --> user_microservice_user_component
+    user_microservice_transaction_finished_event_handler_component --> user_event_consumer_component
+    user_microservice_transaction_finished_event_handler_component --> user_service_component
+    user_microservice_transaction_finished_event_handler_component --> user_microservice_user_component
+    auth_service_component --> user_db_provider_component
+    auth_service_component --> user_microservice_user_component
+    user_service_component --> user_db_provider_component
+    user_service_component --> user_microservice_user_component
+    trading_settings_service_component --> trading_settings_component
+  }
+
+  ContainerDb(payment_integration_container_db, "Payment Integration DB", "PostgreSQL", "", $sprite="postgresql", "Проводящиеся и проведённые запросы к платёжными системам")
+  ContainerDb(transactions_container_db, "Transactions DB", "PostgreSQL", "", $sprite="postgresql", "Проводящиеся и проведённые транзакции")
+  ContainerDb(analytics_container_db, "Analytics DB", "ClickHouse", "Все аналитические данные")
+  ContainerDb(forum_container_db, "Forum DB", "PostgreSQL", "", $sprite="postgresql", "Сообщения, топики, статьи")
+  ContainerDb(user_container_db, "User DB", "PostgreSQL", "", $sprite="postgresql", "Личная информация о пользователях")
+
+  ContainerQueue(analytics_container_mq, "Analytics MQ", "RabbitMQ")
+  ContainerQueue(payment_integration_container_mq, "Payment Integration MQ", "RabbitMQ")
+  ContainerQueue(transactions_container_mq, "Transactions MQ", "RabbitMQ")
+  ContainerQueue(user_container_mq, "User MQ", "RabbitMQ")
+}
+
+System_Ext(mail_system, "E-mail система", "Отправка email-писем")
+System_Ext(payment_system, "Платёжная система")
+System_Ext(proxy_system, "Обратный прокси-сервер", "Защите от DDOS-атак")
+System_Ext(sms_system, "SMS-платформа", "Отправка SMS-писем")
+
+client_trader --> proxy_system : "Использовать"
+client_broker --> proxy_system : "Использовать"
+client_admin --> proxy_system : "Использовать"
+client_analyst --> proxy_system : "Использовать"
+
+proxy_system --> trading_frontend_system : "HTTP-запрос"
+
+trading_frontend_system --> api_gateway_container : "HTTP-запрос"
+
+api_gateway_container --> transactions_microservice_container : "HTTP-запрос"
+api_gateway_container --> analytics_microservice_container : "HTTP-запрос"
+api_gateway_container --> forum_microservice_container : "HTTP-запрос"
+api_gateway_container --> user_microservice_container : "HTTP-запрос"
+
+payment_integration_microservice_container --> payment_integration_container_db : "Передать запрос"
+transactions_microservice_container --> transactions_container_db : "Передать запрос"
+transactions_microservice_container --> payment_integration_microservice_container : "Передать запрос"
+analytics_microservice_container --> analytics_container_db : "Передать запрос"
+forum_microservice_container --> forum_container_db : "Передать запрос"
+user_microservice_container --> user_container_db : "Передать запрос"
+transactions_microservice_container --> payment_integration_microservice_container : "Передать запрос"
+user_microservice_container --> transactions_microservice_container : "Передать запрос"
+
+transactions_microservice_container --> analytics_container_mq : "Отправить событие"
+analytics_microservice_container --> analytics_container_mq : "Отправить событие"
+forum_microservice_container --> analytics_container_mq : "Отправить событие"
+user_microservice_container --> payment_integration_container_mq : "Отправить событие"
+payment_integration_microservice_container --> user_container_mq : "Отправить событие"
+transactions_microservice_container --> payment_integration_container_mq : "Отправить событие"
+transactions_microservice_container --> transactions_container_mq : "Отправить событие"
+payment_integration_microservice_container --> transactions_container_mq : "Отправить событие"
+
+payment_integration_microservice_container --> payment_system : "Отправить запрос"
+user_microservice_container --> mail_system : "Отправить Email"
+user_microservice_container --> sms_system : "Отправить SMS"
+@enduml
