@@ -179,6 +179,8 @@ System_Boundary(trading_backend_system, "Backend") {
     Container_Boundary(user_microservice_infrastructure_container, "Infrastructure") {
       Component(user_mq_provider_component, "User MQ Provider", "C# ASP.NET")
       Component(user_db_provider_component, "User DB Provider", "C# ASP.NET")
+      Component(user_sms_provider_component, "User SMS Provider", "C# ASP.NET")
+      Component(user_email_provider_component, "User Email Provider", "C# ASP.NET")
     }
 
     Container_Boundary(user_microservice_application_container, "Application") {
@@ -208,6 +210,8 @@ System_Boundary(trading_backend_system, "Backend") {
     user_microservice_transaction_finished_event_handler_component --> user_microservice_user_component
     auth_service_component --> user_db_provider_component
     auth_service_component --> user_microservice_user_component
+    auth_service_component --> user_sms_provider_component
+    auth_service_component --> user_email_provider_component
     user_service_component --> user_db_provider_component
     user_service_component --> user_microservice_user_component
     trading_settings_service_component --> trading_settings_component
