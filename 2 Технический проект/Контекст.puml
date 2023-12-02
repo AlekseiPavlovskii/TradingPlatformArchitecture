@@ -1,8 +1,5 @@
 @startuml
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
-!define DEVICONS https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/devicons
-!include DEVICONS/postgresql.puml
-!include DEVICONS/react.puml
 
 LAYOUT_WITH_LEGEND()
 
@@ -13,40 +10,24 @@ Person(client_broker, "Брокер", "")
 Person(client_admin, "Администратор", "")
 Person(client_analyst, "Аналитик", "")
 
-System_Boundary(trading_platform, "Платформа для трейдинга") {
-  Container(trading_api_container, "Backend", "C#, ASP.NET Core 5.1", "")
-  Container(trading_spa_container, "Frontend", "React & Redux", "", $sprite="react")
-  ContainerDb(db_container, "База данных", "PostgreSQL", "", $sprite="postgresql")
-  ContainerDb(anal_db_container, "Аналитическая база данных", "ClickHouse", "")
-}
+System(trading_platform_system, "Платформа для трейдинга", "")
 
-System_Ext(mail_system, "E-mail система", "")
+System_Ext(mail_system, "E-mail система", "Отправка email-писем")
 System_Ext(payment_system, "Платёжная система", "")
-System_Ext(proxy_system, "Обратный прокси-сервер", "")
-System_Ext(sms_system, "SMS-платформа", "")
+System_Ext(proxy_system, "Обратный прокси-сервер", "Защита от DDOS-атак")
+System_Ext(sms_system, "SMS-платформа", "Отправка SMS-писем")
 
-Rel(client_trader, trading_spa_container, "Использует")
-Rel(client_broker, trading_spa_container, "Использует")
-Rel(client_admin, trading_spa_container, "Использует")
-Rel(client_analyst, trading_spa_container, "Использует")
+client_trader --> trading_platform_system : "Использует | HTTP"
+client_broker --> trading_platform_system : "Использует | HTTP"
+client_admin --> trading_platform_system : "Использует | HTTP"
+client_analyst --> trading_platform_system : "Использует | HTTP"
 
-Rel(trading_spa_container, trading_api_container, "Отправить запрос")
-Rel(trading_api_container, trading_spa_container, "Отправить запрос")
+proxy_system --> trading_platform_system : "Перехватить запрос | HTTP"
 
-Rel(proxy_system, trading_api_container, "Перехватить запрос")
-Rel(proxy_system, trading_api_container, "Отправить запрос")
+trading_platform_system --> sms_system : "Отправить запрос на отправку SMS-сообщения | HTTP"
 
-Rel(trading_api_container, sms_system, "Отправить запрос на отправку SMS-сообщения")
+trading_platform_system --> payment_system : "Отправить запрос на пополнение/вывод средств | HTTP"
 
-Rel(trading_api_container, payment_system, "Отправить запрос на пополнение/вывод средств")
+trading_platform_system --> mail_system : "Отправить запрос на отправку email-письма | HTTP"
 
-Rel(trading_api_container, mail_system, "Отправить запрос на отправку email-письма")
-
-Rel(trading_api_container, db_container, "Отправить запрос на получение данных")
-
-Rel(trading_api_container, anal_db_container, "Отправить запрос на получение данных")
-
-Rel(db_container, trading_api_container, "Ответить на запрос")
-
-Rel(anal_db_container, trading_api_container, "Ответить на запрос")
 @enduml

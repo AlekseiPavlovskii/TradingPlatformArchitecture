@@ -20,7 +20,7 @@ System_Boundary(trading_backend_system, "Backend") {
 
   Container_Boundary(payment_integration_microservice_container, "Payment Integration Microservice") {
     Container_Boundary(payment_integration_microservice_api_container, "API") {
-      Component(payment_integration_event_controller_component, "Payment Integration Event Controller", C#, ASP.NET")
+      Component(payment_integration_event_consumer_component, "Payment Integration Event Consumer", C#, ASP.NET")
       Component(payment_method_controller_component, "Payment Method Controller", "C#, ASP.NET")
       Component(payment_integration_microservice_transaction_controller_component, "Transaction Controller",  "C#, ASP.NET") 
     }
@@ -43,9 +43,9 @@ System_Boundary(trading_backend_system, "Backend") {
     }
 
     'Связи внутри контейнера
-    payment_integration_event_controller_component --> payment_integration_mq_provider_component
-    payment_integration_event_controller_component --> payment_integration_microservice_payment_method_added_event_handler_component
-    payment_integration_event_controller_component --> transactions_created_event_handler_component
+    payment_integration_event_consumer_component --> payment_integration_mq_provider_component
+    payment_integration_event_consumer_component --> payment_integration_microservice_payment_method_added_event_handler_component
+    payment_integration_event_consumer_component --> transactions_created_event_handler_component
     payment_method_controller_component --> payment_method_service_component
     payment_integration_microservice_transaction_controller_component --> payment_integration_microservice_transaction_service_component
     
@@ -141,6 +141,7 @@ System_Boundary(trading_backend_system, "Backend") {
     }
 
     Container_Boundary(forum_microservice_infrastructure_container, "Infrastructure") {
+      Component(forum_mq_provider_component, "Forum MQ Provider", "C# ASP.NET")
       Component(forum_db_provider_component, "Forum DB Provider", "C# ASP.NET")
     }
 
@@ -230,39 +231,41 @@ System_Ext(payment_system, "Платёжная система")
 System_Ext(proxy_system, "Обратный прокси-сервер", "Защите от DDOS-атак")
 System_Ext(sms_system, "SMS-платформа", "Отправка SMS-писем")
 
-client_trader --> proxy_system : "Использовать"
-client_broker --> proxy_system : "Использовать"
-client_admin --> proxy_system : "Использовать"
-client_analyst --> proxy_system : "Использовать"
+client_trader --> proxy_system : "Использовать | HTTP"
+client_broker --> proxy_system : "Использовать | HTTP"
+client_admin --> proxy_system : "Использовать | HTTP"
+client_analyst --> proxy_system : "Использовать | HTTP"
 
 proxy_system --> trading_frontend_system : "HTTP-запрос"
 
 trading_frontend_system --> api_gateway_container : "HTTP-запрос"
 
-api_gateway_container --> transactions_microservice_container : "HTTP-запрос"
-api_gateway_container --> analytics_microservice_container : "HTTP-запрос"
-api_gateway_container --> forum_microservice_container : "HTTP-запрос"
-api_gateway_container --> user_microservice_container : "HTTP-запрос"
+api_gateway_container --> transaction_microservice_transaction_controller_component : "HTTP-запрос"
+api_gateway_container --> analytics_controller_component : "HTTP-запрос"
+api_gateway_container --> message_controller_component : "HTTP-запрос"
+api_gateway_container --> topic_controller_component : "HTTP-запрос"
+api_gateway_container --> trading_settings_controller_component : "HTTP-запрос"
+api_gateway_container --> auth_controller_component : "HTTP-запрос"
+api_gateway_container --> user_controller_component : "HTTP-запрос"
 
-payment_integration_microservice_container --> payment_integration_container_db : "Передать запрос"
-transactions_microservice_container --> transactions_container_db : "Передать запрос"
-transactions_microservice_container --> payment_integration_microservice_container : "Передать запрос"
-analytics_microservice_container --> analytics_container_db : "Передать запрос"
-forum_microservice_container --> forum_container_db : "Передать запрос"
-user_microservice_container --> user_container_db : "Передать запрос"
-transactions_microservice_container --> payment_integration_microservice_container : "Передать запрос"
-user_microservice_container --> transactions_microservice_container : "Передать запрос"
+payment_integration_db_provider_component --> payment_integration_container_db : "Передать запрос | TCP/IP"
+transaction_db_provider_component --> transactions_container_db : "Передать запрос | TCP/IP"
+transactions_microservice_container --> payment_integration_microservice_transaction_controller_component : "Передать запрос"
+analytics_db_provider_component --> analytics_container_db : "Передать запрос"
+forum_db_provider_component --> forum_container_db : "Передать запрос | TCP/IP"
+user_db_provider_component --> user_container_db : "Передать запрос | TCP/IP"
+user_microservice_container --> transaction_microservice_transaction_controller_component : "Передать запрос"
 
-transactions_microservice_container --> analytics_container_mq : "Отправить событие"
-analytics_microservice_container --> analytics_container_mq : "Отправить событие"
-forum_microservice_container --> analytics_container_mq : "Отправить событие"
-user_microservice_container --> payment_integration_container_mq : "Отправить событие"
-payment_integration_microservice_container --> user_container_mq : "Отправить событие"
-transactions_microservice_container --> payment_integration_container_mq : "Отправить событие"
-transactions_microservice_container --> transactions_container_mq : "Отправить событие"
-payment_integration_microservice_container --> transactions_container_mq : "Отправить событие"
+transaction_mq_provider_component --> analytics_container_mq : "Отправить событие"
+analytics_mq_provider_component --> analytics_container_mq : "Отправить событие"
+forum_mq_provider_component --> analytics_container_mq : "Отправить событие"
+user_mq_provider_component --> payment_integration_container_mq : "Отправить событие"
+payment_integration_mq_provider_component --> user_container_mq : "Отправить событие"
+transaction_mq_provider_component --> payment_integration_container_mq : "Отправить событие"
+transaction_mq_provider_component --> transactions_container_mq : "Отправить событие"
+payment_integration_mq_provider_component --> transactions_container_mq : "Отправить событие"
 
-payment_integration_microservice_container --> payment_system : "Отправить запрос"
-user_microservice_container --> mail_system : "Отправить Email"
-user_microservice_container --> sms_system : "Отправить SMS"
+payment_method_service_component --> payment_system : "Отправить запрос | HTTP"
+user_microservice_container --> mail_system : "Отправить Email | HTTP"
+user_microservice_container --> sms_system : "Отправить SMS | HTTP"
 @enduml

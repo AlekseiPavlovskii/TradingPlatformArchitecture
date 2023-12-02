@@ -61,7 +61,6 @@ transactions_microservice_container --> payment_integration_microservice_contain
 analytics_microservice_container --> analytics_container_db : "Передать запрос"
 forum_microservice_container --> forum_container_db : "Передать запрос"
 user_microservice_container --> user_container_db : "Передать запрос"
-transactions_microservice_container --> payment_integration_microservice_container : "Передать запрос"
 user_microservice_container --> transactions_microservice_container : "Передать запрос"
 
 transactions_microservice_container --> analytics_container_mq : "Отправить событие"
