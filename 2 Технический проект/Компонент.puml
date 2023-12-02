@@ -252,13 +252,13 @@ api_gateway_container --> trading_settings_controller_component : "HTTP-запр
 api_gateway_container --> auth_controller_component : "HTTP-запрос"
 api_gateway_container --> user_controller_component : "HTTP-запрос"
 
-payment_integration_db_provider_component --> payment_integration_container_db : "Передать запрос | TCP/IP"
-transaction_db_provider_component --> transactions_container_db : "Передать запрос | TCP/IP"
-transactions_microservice_container --> payment_integration_microservice_transaction_controller_component : "Передать запрос"
-analytics_db_provider_component --> analytics_container_db : "Передать запрос"
-forum_db_provider_component --> forum_container_db : "Передать запрос | TCP/IP"
-user_db_provider_component --> user_container_db : "Передать запрос | TCP/IP"
-user_microservice_container --> transaction_microservice_transaction_controller_component : "Передать запрос"
+payment_integration_db_provider_component --> payment_integration_container_db : "Передать запрос | TCP"
+transaction_db_provider_component --> transactions_container_db : "Передать запрос | TCP"
+transaction_microservice_transaction_controller_component --> payment_integration_microservice_transaction_controller_component : "Передать запрос"
+analytics_db_provider_component --> analytics_container_db : "Передать запрос | HTTP"
+forum_db_provider_component --> forum_container_db : "Передать запрос | TCP"
+user_db_provider_component --> user_container_db : "Передать запрос | TCP"
+user_controller_component --> transaction_microservice_transaction_controller_component : "Передать запрос"
 
 transaction_mq_provider_component --> analytics_container_mq : "Отправить событие"
 analytics_mq_provider_component --> analytics_container_mq : "Отправить событие"
@@ -270,6 +270,6 @@ transaction_mq_provider_component --> transactions_container_mq : "Отправ�
 payment_integration_mq_provider_component --> transactions_container_mq : "Отправить событие"
 
 payment_method_service_component --> payment_system : "Отправить запрос | HTTP"
-user_microservice_container --> mail_system : "Отправить Email | HTTP"
-user_microservice_container --> sms_system : "Отправить SMS | HTTP"
+user_email_provider_component --> mail_system : "Отправить Email | HTTP"
+user_sms_provider_component --> sms_system : "Отправить SMS | HTTP"
 @enduml
