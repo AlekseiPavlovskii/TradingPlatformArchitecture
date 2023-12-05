@@ -1,36 +1,36 @@
 @startuml
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Deployment.puml
 !define DEVICONS https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/devicons
 !include DEVICONS/postgresql.puml
 !include DEVICONS/react.puml
 
-System_Boundary(trading_frontend_system, "Frontend") {
-    Container(trading_frontend_instance, "Frontend SF Instance")
-}
+System(trading_frontend_instance, "Frontend")
 
 System(trading_api_gateway, "API Gateway")
 
-System_Boundary(trading_microservice, "Microservice") {
-    Container(trading_backend_load_balancer, "Backend load balancer")
-    Container(trading_backend_instance_1, "Backend instance 1")
-    Container(trading_backend_instance_2, "Backend instance 2")
-    Container(trading_backend_instance_N, "Backend instance N")
-    Container(trading_db_load_balancer, "Database load balancer")
-    Container(trading_db_instance_1, "Database instance 1")
-    Container(trading_db_instance_2, "Database instance 2")
-    Container(trading_db_instance_N, "Database instance N")
-}
+System(trading_backend_load_balancer, "Backend load balancer", "Nginx (Linux)")
+Deployment_Node(trading_backend_instance_1, "Backend instance 1", "ServiceFabric instance (Windows Server)")
+Deployment_Node(trading_backend_instance_2, "Backend instance 2", "ServiceFabric instance (Windows Server)")
+Deployment_Node(trading_backend_instance_N, "Backend instance N", "ServiceFabric instance (Windows Server)")
+System(trading_message_queue, "Message queue", "RabbitMQ Server (Linux)")
+System(trading_db_load_balancer, "Database load balancer", "Pgpool-II (Linux)")
+Deployment_Node(trading_db_instance_1, "Database instance 1", "PostgreSQL (Linux)")
+Deployment_Node(trading_db_instance_2, "Database instance 2", "PostgreSQL (Linux)")
+Deployment_Node(trading_db_instance_N, "Database instance N", "PostgreSQL (Linux)")
 
-trading_frontend_instance --> trading_api_gateway
-trading_api_gateway --> trading_backend_load_balancer
-trading_backend_load_balancer --> trading_backend_instance_1
-trading_backend_load_balancer --> trading_backend_instance_2
-trading_backend_load_balancer --> trading_backend_instance_N
-trading_backend_instance_1 --> trading_db_load_balancer
-trading_backend_instance_2 --> trading_db_load_balancer
-trading_backend_instance_N --> trading_db_load_balancer
-trading_db_load_balancer --> trading_db_instance_1
-trading_db_load_balancer --> trading_db_instance_2
-trading_db_load_balancer --> trading_db_instance_N
+trading_frontend_instance --> trading_api_gateway : "HTTP"
+trading_api_gateway --> trading_backend_load_balancer : "HTTP"
+trading_backend_load_balancer --> trading_backend_instance_1 : "HTTP"
+trading_backend_load_balancer --> trading_backend_instance_2 : "HTTP"
+trading_backend_load_balancer --> trading_backend_instance_N : "HTTP"
+trading_backend_instance_1 --> trading_message_queue : "AMQP"
+trading_backend_instance_2 --> trading_message_queue : "AMQP"
+trading_backend_instance_N --> trading_message_queue : "AMQP"
+trading_backend_instance_1 --> trading_db_load_balancer : "TCP/IP"
+trading_backend_instance_2 --> trading_db_load_balancer : "TCP/IP"
+trading_backend_instance_N --> trading_db_load_balancer : "TCP/IP"
+trading_db_load_balancer --> trading_db_instance_1 : "TCP/IP"
+trading_db_load_balancer --> trading_db_instance_2 : "TCP/IP"
+trading_db_load_balancer --> trading_db_instance_N : "TCP/IP"
 
 @enduml
