@@ -1,0 +1,45 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Deployment.puml
+!define DEVICONS https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/devicons
+!include DEVICONS/postgresql.puml
+!include DEVICONS/react.puml
+
+System_Boundary(trading_development, "Development") {
+    System(trading_development_developer, "Developer")
+    System(trading_development_code_vcs, "Code VCS")
+    System(trading_development_ci, "CI")
+    System(trading_development_cd, "CD")
+}
+
+System_Boundary(trading_service_fabric_cluster, "Service Fabric cluster") {
+    System(trading_service_fabric_cluster_controller, "Controller")
+    System(trading_service_fabric_cluster_nodes, "Nodes")
+}
+
+System_Boundary(trading_artifacts, "Artifacts") {
+    System(trading_artifacts_image_registry, "SF image registry")
+    System(trading_artifacts_config_secret_vcs, "Config secret VCS")
+}
+
+System_Boundary(trading_external_services, "External services") {
+    System(trading_external_services_mq, "Message query")
+    System(trading_external_services_db, "Database")
+}
+
+System_Boundary(trading_external_network, "External network") {
+    System(trading_external_network_user, "User")
+}
+
+trading_development_developer --> trading_development_code_vcs : "commit"
+trading_development_code_vcs --> trading_development_ci : "build"
+trading_development_ci --> trading_development_cd
+trading_development_ci --> trading_artifacts_image_registry : "upload image"
+trading_development_cd --> trading_service_fabric_cluster_controller : "deploy"
+trading_service_fabric_cluster_controller --> trading_artifacts_image_registry : "fetch"
+trading_service_fabric_cluster_controller --> trading_artifacts_config_secret_vcs : "fetch"
+trading_service_fabric_cluster_controller --> trading_service_fabric_cluster_nodes : "deploy"
+trading_external_network_user --> trading_service_fabric_cluster_nodes
+trading_service_fabric_cluster_nodes --> trading_external_services_mq
+trading_service_fabric_cluster_nodes --> trading_external_services_db
+
+@enduml
